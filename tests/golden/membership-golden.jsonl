@@ -1,0 +1,12 @@
+{"id": "g-001", "as": "alice", "op": "lookup", "member": "M-1001", "legacy_response": {"status": 200, "body": {"memberId": "M-1001", "name": "Member One", "phone": "+1 555 000 0001", "plan": "PLUS", "status": "ACTIVE", "expires": "12/31/2026", "paid": 124.0}}}
+{"id": "g-002", "as": "ana", "op": "lookup", "member": "M-1003", "legacy_response": {"status": 200, "body": {"memberId": "M-1003", "name": "Member Three", "phone": "+1 555 000 0003", "plan": "PREMIER", "status": "LAPSED", "expires": "09/15/2025", "paid": 164.0}}}
+{"id": "g-003", "as": "bob", "op": "lookup", "member": "M-1001", "legacy_response": {"status": 403, "body": {"error": "Not allowed"}}}
+{"id": "g-004", "as": "ana", "op": "lookup", "member": "M-9999", "legacy_response": {"status": 200, "body": {"error": "Member not found"}}}
+{"id": "g-005", "as": "bob", "op": "renew", "member": "M-1002", "autopay": false, "legacy_response": {"status": 200, "body": {"memberId": "M-1002", "expires": "03/31/2027", "charged": 69}}}
+{"id": "g-006", "as": "alice", "op": "renew", "member": "M-1001", "autopay": true, "legacy_response": {"status": 200, "body": {"memberId": "M-1001", "expires": "12/31/2027", "charged": 117.80}}}
+{"id": "g-007", "as": "ana", "op": "renew", "member": "M-1003", "autopay": false, "legacy_response": {"status": 200, "body": {"memberId": "M-1003", "expires": "03/10/2027", "charged": 164}}}
+{"id": "g-008", "as": "alice", "op": "cancel", "member": "M-1001", "legacy_response": {"status": 200, "body": {"memberId": "M-1001", "refund": 100}}}
+{"id": "g-009", "as": "alice", "op": "cancel", "member": "M-1001", "repeat": true, "legacy_response": {"status": 200, "body": {"memberId": "M-1001", "refund": 100}}}
+{"id": "g-010", "as": "bob", "op": "cancel", "member": "M-1002", "legacy_response": {"status": 200, "body": {"memberId": "M-1002", "refund": 0}}}
+{"id": "g-011", "as": "bob", "op": "cancel", "member": "M-1001", "legacy_response": {"status": 403, "body": {"error": "Not allowed"}}}
+{"id": "g-012", "as": "ana", "op": "cancel", "member": "M-1004", "legacy_response": {"status": 200, "body": {"memberId": "M-1004", "refund": 132}}}

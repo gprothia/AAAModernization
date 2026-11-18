@@ -1,0 +1,24 @@
+# Harness sandbox, rendered with NS and BRANCH. Deleted when the PR closes (or after 24 hours).
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ${NS}
+  labels: { sandbox: modernization, branch: "${BRANCH}" }
+---
+apiVersion: v1
+kind: ResourceQuota
+metadata: { name: sandbox-quota, namespace: ${NS} }
+spec:
+  hard: { requests.cpu: "4", requests.memory: 8Gi, pods: "12", services.loadbalancers: "0" }
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: { name: isolate-namespace, namespace: ${NS} }
+spec:
+  podSelector: {}
+  policyTypes: [Ingress, Egress]
+  ingress: [{ from: [{ podSelector: {} }] }]
+  egress:                                   # the legacy service must not reach real systems
+    - to: [{ podSelector: {} }]
+    - to: [{ namespaceSelector: {}, podSelector: { matchLabels: { k8s-app: kube-dns } } }]
+      ports: [{ port: 53, protocol: UDP }]

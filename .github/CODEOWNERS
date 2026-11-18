@@ -1,0 +1,7 @@
+# Who must approve changes (standards/security.md SEC-5). Real teams in a real organisation.
+/standards/                 @gprothia
+/standards/modernization.md @gprothia
+/legacy/                    @gprothia
+/tests/golden/allowed_differences.yaml @gprothia
+/deploy/prod/               @gprothia
+/.github/workflows/         @gprothia

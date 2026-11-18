@@ -1,0 +1,16 @@
+# Differences between legacy and new responses that are approved (MOD-10).
+# Every entry names an approved deviation in a to-be spec; scripts/check_traceability.py checks it.
+- deviation: DEV-001-01        # specs/MEM-001: another member's record
+  when: {op: lookup, legacy_kind: forbidden}
+  modern_kind: not_found
+- deviation: DEV-003-01        # specs/MEM-003: another member's cancellation
+  when: {op: cancel, legacy_kind: forbidden}
+  modern_kind: not_found
+- deviation: DEV-003-04        # specs/MEM-003: a repeated cancellation
+  when: {op: cancel, repeat: true}
+  modern_kind: conflict
+- deviation: DEV-003-07        # specs/MEM-003: agent refund above 100.00
+  when: {op: cancel, as: ana, member: M-1004}
+  modern_kind: forbidden
+# Format-only differences (dates, amounts, field names) are removed by normalisation in
+# tests/harness/adapters.py and are not differences at all.

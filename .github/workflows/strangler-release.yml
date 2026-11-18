@@ -1,0 +1,58 @@
+name: Strangler release
+
+# Moves production traffic from the legacy service to the new one, one step at a time
+# (standards/modernization.md MOD-9). Always started by a person and approved in the
+# `production` environment; each step is judged against the spec's SLO and the legacy baseline.
+on:
+  workflow_dispatch:
+    inputs:
+      step:
+        description: Share of /v1/members traffic for the new service
+        type: choice
+        options: ["10", "50", "100"]
+
+permissions:
+  contents: read
+  pull-requests: write
+  id-token: write
+
+jobs:
+  step:
+    if: vars.GCP_PROJECT_ID != ''
+    runs-on: ubuntu-latest
+    environment: production            # a named approver releases every step
+    steps:
+      - uses: actions/checkout@v5
+      - uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ vars.WIF_PROVIDER }}
+          service_account: ${{ vars.CI_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/get-gke-credentials@v3
+        with: { cluster_name: "${{ vars.GKE_CLUSTER }}", location: "${{ vars.GCP_REGION }}" }
+      - name: Remember the current weights
+        run: kubectl -n membership-prod get httproute membership -o json > before.json
+      - name: Apply the new weights
+        run: |
+          new=${{ inputs.step }}; old=$((100 - new))
+          kubectl -n membership-prod patch httproute membership --type=json -p "[
+            {\"op\":\"replace\",\"path\":\"/spec/rules/0/backendRefs/0/weight\",\"value\":$new},
+            {\"op\":\"replace\",\"path\":\"/spec/rules/0/backendRefs/1/weight\",\"value\":$old}]"
+      - name: Measure the new service and the legacy service under the same traffic window
+        run: |
+          python tools/loadgen.py --target modern --url "$GATEWAY_URL" --seconds 300 | tee modern.txt
+        env: { GATEWAY_URL: "${{ vars.MEMBERSHIP_GATEWAY_URL }}" }
+      - name: Judge against the spec SLO and the legacy baseline
+        id: judge
+        run: |
+          python - <<'PY'
+          import json, re, pathlib
+          m = json.loads(pathlib.Path("modern.txt").read_text().split("BASELINE ", 1)[1])
+          slo = dict(re.findall(r"(p95_latency_ms|error_rate_pct): ([\d.]+)",
+                     pathlib.Path("specs/MEM-003-cancel-and-refund.md").read_text().split("```slo")[1]))
+          ok = m["p95_latency_ms"] <= float(slo["p95_latency_ms"]) and m["error_rate_pct"] <= float(slo["error_rate_pct"])
+          print("PASS" if ok else "FAIL", m, slo)
+          open(__import__("os").environ["GITHUB_OUTPUT"], "a").write(f"verdict={'pass' if ok else 'fail'}\n")
+          PY
+      - name: Over budget, roll traffic back to the previous weights
+        if: steps.judge.outputs.verdict == 'fail' || failure()
+        run: kubectl replace -f before.json

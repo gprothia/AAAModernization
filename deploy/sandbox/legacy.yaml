@@ -1,0 +1,36 @@
+# The legacy service, unchanged, for the characterisation harness (MOD-6).
+# One pod: Tomcat with the legacy WAR, its H2 database, and a reset sidecar that reloads the
+# seed data and sets the frozen clock (libfaketime) before each test.
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: legacy-membership, namespace: ${NS} }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: legacy-membership } }
+  template:
+    metadata: { labels: { app: legacy-membership } }
+    spec:
+      containers:
+        - name: legacy
+          image: ${AR}/legacy-membership:${TAG}
+          env:
+            - { name: CATALINA_OPTS, value: "-Dmembership.db=jdbc:h2:tcp://localhost:9092/mem:members" }
+            - { name: FAKETIME_TIMESTAMP_FILE, value: /clock/faketime.rc }
+            - { name: FAKETIME_NO_CACHE, value: "1" }
+          ports: [{ containerPort: 8080 }]
+          volumeMounts: [{ name: clock, mountPath: /clock }]
+        - name: db
+          image: ${AR}/h2:1.4.200
+          args: ["-tcp", "-tcpAllowOthers", "-ifNotExists"]
+        - name: harness-reset             # sandbox only: never deployed to production
+          image: ${AR}/harness-reset:${TAG}
+          ports: [{ containerPort: 9000 }]
+          volumeMounts: [{ name: clock, mountPath: /clock }]
+      volumes: [{ name: clock, emptyDir: {} }]
+---
+apiVersion: v1
+kind: Service
+metadata: { name: legacy-membership, namespace: ${NS} }
+spec:
+  selector: { app: legacy-membership }
+  ports: [{ name: http, port: 8080 }, { name: reset, port: 9000 }]

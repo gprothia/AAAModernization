@@ -1,0 +1,47 @@
+# Production: both systems run side by side during the migration (MOD-9).
+apiVersion: v1
+kind: Namespace
+metadata: { name: membership-prod, labels: { environment: production } }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: membership, namespace: membership-prod }
+spec:
+  replicas: 3
+  selector: { matchLabels: { app: membership } }
+  template:
+    metadata: { labels: { app: membership } }
+    spec:
+      containers:
+        - name: membership
+          image: ${AR}/membership:${TAG}
+          env: [{ name: ENABLE_TEST_HOOKS, value: "false" }]     # never in production
+          ports: [{ containerPort: 8080 }]
+          readinessProbe: { httpGet: { path: /healthz, port: 8080 } }
+          resources: { requests: { cpu: 250m, memory: 256Mi } }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: membership, namespace: membership-prod }
+spec: { selector: { app: membership }, ports: [{ port: 8080 }] }
+---
+# Gives the legacy service the same /v1 contract, so the gateway can split traffic by weight.
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: legacy-facade, namespace: membership-prod }
+spec:
+  replicas: 2
+  selector: { matchLabels: { app: legacy-facade } }
+  template:
+    metadata: { labels: { app: legacy-facade } }
+    spec:
+      containers:
+        - name: facade
+          image: ${AR}/legacy-facade:${TAG}
+          env: [{ name: LEGACY_URL, value: "http://legacy-membership.legacy.svc:8080" }]
+          ports: [{ containerPort: 8080 }]
+---
+apiVersion: v1
+kind: Service
+metadata: { name: legacy-facade, namespace: membership-prod }
+spec: { selector: { app: legacy-facade }, ports: [{ port: 8080 }] }

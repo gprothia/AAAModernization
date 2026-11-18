@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app version="3.0">
+  <servlet><servlet-name>member</servlet-name><servlet-class>org.aaa.membership.MemberServlet</servlet-class></servlet>
+  <servlet-mapping><servlet-name>member</servlet-name><url-pattern>/getMember</url-pattern></servlet-mapping>
+  <servlet-mapping><servlet-name>member</servlet-name><url-pattern>/renewMember</url-pattern></servlet-mapping>
+  <servlet-mapping><servlet-name>member</servlet-name><url-pattern>/cancelMember</url-pattern></servlet-mapping>
+</web-app>

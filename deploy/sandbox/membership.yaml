@@ -1,0 +1,23 @@
+# The new service in the harness sandbox. Test hooks on here only (SEC-2).
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: membership, namespace: ${NS} }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: membership } }
+  template:
+    metadata: { labels: { app: membership } }
+    spec:
+      containers:
+        - name: membership
+          image: ${AR}/membership:${TAG}
+          env: [{ name: ENABLE_TEST_HOOKS, value: "true" }]
+          ports: [{ containerPort: 8080 }]
+          readinessProbe: { httpGet: { path: /healthz, port: 8080 } }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: membership, namespace: ${NS} }
+spec:
+  selector: { app: membership }
+  ports: [{ port: 8080 }]

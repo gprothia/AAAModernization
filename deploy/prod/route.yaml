@@ -1,0 +1,19 @@
+# The strangler split (MOD-9). strangler-release.yml changes the two weights: 10/90, 50/50, 100/0.
+# Internal gateway only: nothing is exposed to the internet (AAA-4).
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata: { name: membership, namespace: membership-prod }
+spec:
+  gatewayClassName: gke-l7-rilb
+  listeners: [{ name: http, protocol: HTTP, port: 80 }]
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata: { name: membership, namespace: membership-prod }
+spec:
+  parentRefs: [{ name: membership }]
+  rules:
+    - matches: [{ path: { type: PathPrefix, value: /v1/members } }]
+      backendRefs:
+        - { name: membership,    port: 8080, weight: 10 }   # new service
+        - { name: legacy-facade, port: 8080, weight: 90 }   # legacy, via the facade

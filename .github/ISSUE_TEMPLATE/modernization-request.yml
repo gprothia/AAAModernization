@@ -1,0 +1,25 @@
+name: Modernisation request
+description: Rebuild a legacy service on GKE, keeping what people rely on
+title: "[Modernise] "
+labels: [modernization]
+body:
+  - type: input
+    id: service
+    attributes: { label: Legacy service, description: "Folder under legacy/, e.g. legacy/membership-api" }
+    validations: { required: true }
+  - type: textarea
+    id: why
+    attributes: { label: Why, description: "Cost, risk, speed of change, platform end of life..." }
+    validations: { required: true }
+  - type: textarea
+    id: who
+    attributes: { label: Who uses it today, description: "People and systems that call it" }
+  - type: textarea
+    id: known
+    attributes: { label: Known problems, description: "Bugs or behaviours people already know about" }
+  - type: textarea
+    id: constraints
+    attributes: { label: Constraints, description: "Cut-over window, systems that must not change, reporting" }
+  - type: textarea
+    id: questions
+    attributes: { label: Open questions }

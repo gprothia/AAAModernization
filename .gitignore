@@ -1,0 +1,4 @@
+reports/mod-*
+.tmp/
+__pycache__/
+*.pyc
